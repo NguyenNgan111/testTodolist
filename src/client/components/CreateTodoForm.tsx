@@ -34,7 +34,6 @@ export const CreateTodoForm = () => {
         apiContext.todo.getAll.refetch()
       },
     })
-
   return (
     <form className="group flex items-center justify-between rounded-12 border border-gray-200 py-2 pr-4 focus-within:border-gray-400">
       <label htmlFor={TODO_INPUT_ID} className="sr-only">
@@ -49,10 +48,20 @@ export const CreateTodoForm = () => {
         onChange={(e) => {
           setTodoBody(e.target.value)
         }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && e.target.value) {
+            createTodo({
+              body: todoBody,
+            })
+            setTodoBody('')
+          }
+        }}
         className="flex-1 px-4 text-base placeholder:text-gray-400 focus:outline-none"
       />
 
       <button
+        // eslint-disable-next-line prettier/prettier
+        className="btn pt-2 pb-2 pl-5 pr-5 text-sm bg-gray-700 text-white rounded-full"     
         type="button"
         disabled={isCreatingTodo}
         onClick={() => {

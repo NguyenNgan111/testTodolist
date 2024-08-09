@@ -1,4 +1,4 @@
-import type { SVGProps } from 'react'
+import React, { Fragment, useState, type SVGProps } from 'react'
 
 import * as Checkbox from '@radix-ui/react-checkbox'
 
@@ -62,33 +62,79 @@ import { api } from '@/utils/client/api'
  * Documentation references:
  *  - https://auto-animate.formkit.com
  */
-
+const listStatus = ['All', 'Pending', 'Completed']
 export const TodoList = () => {
+  const [checked, setChecked] = useState(true)
+  const [todoBody, setTodoBody] = useState('')
   const { data: todos = [] } = api.todo.getAll.useQuery({
     statuses: ['completed', 'pending'],
   })
-
+  // eslint-disable-next-line no-console
+  const { mutate: updateTodo, isLoading: isUpdatingTodo } =
+    api.todoStatus.update.useMutation({
+      onSuccess: () => {
+        api.useContext().todo.getAll.refetch()
+      },
+    })
+  const { mutate: deleteTodo, isLoading: isDeletingTodo } =
+    api.todo.delete.useMutation({
+      onSuccess: () => {
+        api.useContext().todo.getAll.refetch()
+      },
+    })
   return (
-    <ul className="grid grid-cols-1 gap-y-3">
-      {todos.map((todo) => (
-        <li key={todo.id}>
-          <div className="flex items-center rounded-12 border border-gray-200 px-4 py-3 shadow-sm">
-            <Checkbox.Root
-              id={String(todo.id)}
-              className="flex h-6 w-6 items-center justify-center rounded-6 border border-gray-300 focus:border-gray-700 focus:outline-none data-[state=checked]:border-gray-700 data-[state=checked]:bg-gray-700"
-            >
-              <Checkbox.Indicator>
-                <CheckIcon className="h-4 w-4 text-white" />
-              </Checkbox.Indicator>
-            </Checkbox.Root>
-
-            <label className="block pl-3 font-medium" htmlFor={String(todo.id)}>
-              {todo.body}
-            </label>
-          </div>
-        </li>
-      ))}
-    </ul>
+    <Fragment>
+      <ul className="mb-8 flex">
+        {listStatus.map((status) => (
+          <li key={status} className="pr-1">
+            <button className="rounded-full border border-solid border-gray-200 bg-white pb-3 pl-6 pr-6 pt-3 text-sm">
+              {status}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <ul className="grid grid-cols-1 gap-y-3">
+        {todos.map((todo) => (
+          <li key={todo.id}>
+            <div className="flex items-center rounded-12 border border-gray-200 px-4 py-3 shadow-sm">
+              <Checkbox.Root
+                // eslint-disable-next-line prettier/prettier
+                checked={(todo.status=='completed') ? true : false}
+                onClick={(e) => {
+                  updateTodo({
+                    todoId: todo.id,
+                    status: todo.status == 'pending' ? 'completed' : 'pending',
+                  })
+                  setChecked(!checked)
+                }}
+                id={String(todo.id)}
+                className="flex h-6 w-6 items-center justify-center rounded-6 border border-gray-300 focus:border-gray-700 focus:outline-none data-[state=checked]:border-gray-700 data-[state=checked]:bg-gray-700"
+              >
+                <Checkbox.Indicator>
+                  <CheckIcon className="h-4 w-4 text-white" />
+                </Checkbox.Indicator>
+              </Checkbox.Root>
+              <label
+                className="block grow pl-3 font-medium"
+                htmlFor={String(todo.id)}
+              >
+                {todo.body}
+              </label>
+              <div
+                className="p-1 hover:cursor-pointer"
+                onClick={(e) => {
+                  deleteTodo({
+                    id: todo.id,
+                  })
+                }}
+              >
+                <XMarkIcon />
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Fragment>
   )
 }
 
@@ -96,10 +142,13 @@ const XMarkIcon = (props: SVGProps<SVGSVGElement>) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
+      width={20}
+      height={20}
       fill="none"
       viewBox="0 0 24 24"
       strokeWidth={1.5}
       stroke="currentColor"
+      // stroke="green"
       {...props}
     >
       <path
